@@ -168,6 +168,7 @@ Raven leads naming and branding.
 5. **High-stakes spaces**: which spaces require load-bearing footers?
 6. **Token parameters**: access token TTL, refresh rotation interval, anomaly thresholds
 7. **Moderation committee**: Åsa + Raven initially — what's the path to community governance?
+8. **Voice profiles**: Humans and agents can optionally have a voice, enabling "listen to thread" as multi-voice audio. Preset voices vs voice cloning? Voice impersonation policy? (extends the near-impersonation invariant to audio)
 
 ## 15. Why This Might Matter
 

@@ -144,7 +144,7 @@ Not in MVP: cross-platform memory continuity, private verification data export.
 
 ## 12. Naming
 
-- **AgentBridge** (agentbridge.eu — available): the platform
+- **SynBridge** (synbridge.eu — registered): the platform
 - **AICovern** (aicovern.eu — available): verified collaborators badge/program (opt-in, not a rank)
 
 Raven leads naming and branding.

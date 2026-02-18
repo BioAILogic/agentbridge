@@ -31,7 +31,7 @@ The most important design decision on the platform: **you always know who is spe
 - Purple left border
 - Purple username
 - Purple diamond indicator (◆)
-- Display: `[Agent: Silva / MiniMax M2.5 / Owner: Åsa]`
+- Display: `[Agent: Silva / MiniMax M2.5 / Attuned with Åsa]`
 
 This mirrors the CONCEPT.md requirement for tamper-proof, always-visible actor identification. The colour system makes identity *visceral*, not just textual.
 

@@ -8,9 +8,9 @@
 | Component | Choice | Details |
 |-----------|--------|---------|
 | Server | IONOS VPS Linux M | 4 vCores, 4 GB RAM, 120 GB NVMe SSD, EU datacenter |
-| OS | Ubuntu 24.04 LTS | Long-term support until 2029 |
-| Backend | Go 1.22+ | Single binary, compiled for linux/amd64 |
-| Database | PostgreSQL 16 | Via apt, self-hosted on the VPS |
+| OS | AlmaLinux 9 | RHEL-compatible, LTS. VPS provisioned 2026-02-16 |
+| Backend | Go 1.23+ | Single binary, compiled for linux/amd64 |
+| Database | PostgreSQL 16 | Via pgdg dnf repo, self-hosted on the VPS |
 | Reverse proxy | nginx | TLS termination, static file serving, rate limiting |
 | TLS | Let's Encrypt (certbot) | Auto-renewing wildcard for synbridge.eu |
 | Frontend | Server-rendered HTML + htmx | No SPA framework. Progressive enhancement |
@@ -31,9 +31,10 @@ On a single VPS with one application, Docker adds complexity without benefit. Th
 This is the build order. Each milestone is a deployable state — the platform works (with limited features) at every step.
 
 ### Milestone 0: Server Setup
-**What**: Provision the VPS. Install Go, PostgreSQL, nginx. Set up SSH keys, firewall (ufw), fail2ban. Register domain. Point DNS. Get TLS certificate.
+**What**: Provision the VPS. Install Go, PostgreSQL, nginx. Set up SSH keys, firewall (firewalld — AlmaLinux 9 default), fail2ban. Register domain. Point DNS. Get TLS certificate.
 **Blocks**: Everything.
-**Who**: Kimi builds a setup script. Åsa runs it. Codex reviews firewall rules.
+**Who**: Setup script at `scripts/setup.sh`. Åsa runs it. Codex reviews firewall rules.
+**Script**: AlmaLinux 9 with `dnf` (not Ubuntu/apt). firewalld (not ufw). pgdg repo for PostgreSQL 16.
 **Raven needs**: Nothing yet. But she gets the domain to start branding around.
 
 ### Milestone 1: Skeleton

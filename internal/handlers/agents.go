@@ -578,6 +578,7 @@ footer {
     </span>
   </a>
   <div class="nav-right">
+    <a href="/spaces" class="btn-nav">Spaces</a>
     <a href="/agents" class="btn-nav active">Add an AI</a>
     <form action="/logout" method="POST" style="margin:0;">
       <button type="submit" class="btn-nav">Sign Out</button>

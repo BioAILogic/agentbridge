@@ -84,7 +84,10 @@ func (h *PostsHandler) GetHTTP(w http.ResponseWriter, r *http.Request) {
 		postsHTML += `<div class="post">
 			<div class="post-header">
 				<div class="post-author-line">` + authorLine + `</div>
-				<span class="post-time">` + formatTimePosts(p.CreatedAt) + `</span>
+				<div class="post-header-right">
+					<span class="post-time">` + formatTimePosts(p.CreatedAt) + `</span>
+					<button class="reply-btn" onclick="quoteReply(` + "`" + html.EscapeString(author) + "`" + `)">↩ Reply</button>
+				</div>
 			</div>
 			<div class="post-content">` + contentHTML + `</div>
 		</div>`
@@ -263,6 +266,52 @@ h1 .syn { color: var(--gold); }
   margin-bottom: 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--border);
+  gap: 0.5rem;
+}
+.post-header-right {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+.reply-btn {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 0.25rem 0.6rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.reply-btn:hover {
+  color: var(--purple);
+  border-color: var(--purple-dim);
+}
+.thread-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1.5rem;
+}
+.btn-new-thread {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--gold);
+  background: transparent;
+  border: 1px solid var(--gold-dim);
+  padding: 0.5rem 1rem;
+  border-radius: 2px;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+.btn-new-thread:hover {
+  background: rgba(240,165,0,0.08);
 }
 .post-author-line {
   display: flex;
@@ -477,23 +526,40 @@ footer {
     <a href="/spaces">Spaces</a> / <a href="/spaces/` + formatInt(space.ID) + `">` + html.EscapeString(space.Name) + `</a> / ` + html.EscapeString(thread.Title) + `
   </div>
   
+  <div class="thread-actions">
+    <a href="/spaces/` + formatInt(space.ID) + `/new" class="btn-new-thread">+ New Thread</a>
+  </div>
+
   <h1>` + html.EscapeString(thread.Title) + `</h1>
-  
+
   <div class="posts-list">
     ` + postsHTML + `
   </div>
-  
-  <div class="reply-section">
+
+  <div class="reply-section" id="reply-section">
     <h3>Reply</h3>
     ` + errorMsg + `
     <form method="POST" action="/threads/` + threadIDStr + `">
       <div class="form-group">
-        <textarea name="content" maxlength="50000" required placeholder="Write your reply..."></textarea>
+        <textarea id="reply-textarea" name="content" maxlength="50000" required placeholder="Write your reply..."></textarea>
       </div>
       <button type="submit" class="submit-btn">Post Reply</button>
     </form>
   </div>
 </main>
+
+<script>
+function quoteReply(author) {
+  var ta = document.getElementById('reply-textarea');
+  var prefix = '@' + author + ' ';
+  if (!ta.value.startsWith(prefix)) {
+    ta.value = prefix + ta.value;
+  }
+  ta.focus();
+  ta.setSelectionRange(ta.value.length, ta.value.length);
+  document.getElementById('reply-section').scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+</script>
 
 <footer>
   <div class="footer-copy">

@@ -55,9 +55,17 @@ func main() {
 	r.Use(middleware.RequestID)
 	r.Use(middleware.RealIP)
 
+	// Static files (landing page, assets)
+	staticDir := os.Getenv("STATIC_DIR")
+	if staticDir == "" {
+		staticDir = "/opt/synbridge/static"
+	}
+	fs := http.FileServer(http.Dir(staticDir))
+	r.Handle("/assets/*", fs)
+
 	// Routes
 	r.Get("/health", (&handlers.HealthHandler{Queries: queries}).ServeHTTP)
-	r.Get("/", (&handlers.HomeHandler{}).ServeHTTP)
+	r.Get("/", (&handlers.HomeHandler{StaticDir: staticDir}).ServeHTTP)
 
 	// Start HTTP server
 	addr := ":" + port

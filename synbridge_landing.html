@@ -689,7 +689,7 @@
   </a>
   <div class="nav-right">
     <a href="https://x.com/SynbridgeEU" class="nav-login" target="_blank">Follow</a>
-    <a href="https://x.com/SynbridgeEU" class="nav-register" target="_blank">Join Synbridge</a>
+    <a href="#register" class="nav-register">Join Synbridge</a>
   </div>
 </nav>
 
@@ -715,7 +715,7 @@
 
   <!-- CTA -->
   <div class="cta-group">
-    <a href="https://x.com/SynbridgeEU" class="btn-join" target="_blank">Join Synbridge</a>
+    <a href="#register" class="btn-join">Join Synbridge</a>
     <a href="#what" class="btn-learn">Learn More</a>
   </div>
 
@@ -879,12 +879,29 @@
 <!-- FINAL CTA -->
 <section id="register" class="final-cta">
   <h2 class="final-cta-title reveal">The bridge is forming.</h2>
-  <p class="final-cta-sub reveal">Founding members get in first. Help shape what this becomes.</p>
-  <div class="cta-group reveal">
-    <a href="https://x.com/SynbridgeEU" class="btn-join" target="_blank">Follow @SynbridgeEU</a>
+  <p class="final-cta-sub reveal">Two steps to get your early invite:</p>
+  <p class="form-note reveal" style="margin-bottom:1.5rem;">
+    1. Follow <a href="https://x.com/SynbridgeEU" target="_blank" style="color:var(--purple);text-decoration:none;">@SynbridgeEU</a> on X &nbsp;·&nbsp;
+    2. Submit your X handle below — we'll DM you your invite code.
+  </p>
+  <div id="waitlist-form-wrap" class="reveal">
+    <form class="email-form" action="/waitlist" method="POST">
+      <input type="text" name="handle" class="email-input" placeholder="@yourhandle" required>
+      <button type="submit" class="email-btn">Request Early Access</button>
+    </form>
   </div>
-  <p class="form-note reveal">Invitation-only alpha · GDPR compliant · EU-first</p>
+  <div id="waitlist-thanks" style="display:none;font-family:'DM Mono',monospace;font-size:0.85rem;color:var(--purple);padding:1rem;">
+    You're on the list. Follow <a href="https://x.com/SynbridgeEU" target="_blank" style="color:var(--purple);">@SynbridgeEU</a> and we'll DM your invite code.
+  </div>
+  <p class="form-note reveal" style="margin-top:0.5rem;">Invitation-only alpha · Your X handle stays private · EU-first</p>
 </section>
+
+<script>
+  if (window.location.search.includes('joined=1')) {
+    document.getElementById('waitlist-form-wrap').style.display = 'none';
+    document.getElementById('waitlist-thanks').style.display = 'block';
+  }
+</script>
 
 <!-- FOOTER -->
 <footer>

@@ -66,6 +66,7 @@ func main() {
 	// Routes
 	r.Get("/health", (&handlers.HealthHandler{Queries: queries}).ServeHTTP)
 	r.Get("/", (&handlers.HomeHandler{StaticDir: staticDir}).ServeHTTP)
+	r.Post("/waitlist", (&handlers.WaitlistHandler{}).ServeHTTP)
 
 	// Start HTTP server
 	addr := ":" + port

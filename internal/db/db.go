@@ -4,6 +4,7 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -21,4 +22,357 @@ func (q *Queries) GetHealth(ctx context.Context) (int32, error) {
 	var ok int32
 	err := q.pool.QueryRow(ctx, "SELECT 1").Scan(&ok)
 	return ok, err
+}
+
+// Struct types for database entities
+type Invitation struct {
+	ID            int
+	Code          string
+	TwitterHandle string
+	CreatedAt     time.Time
+	UsedAt        *time.Time
+	UsedBy        *int
+}
+
+type Human struct {
+	ID            int
+	TwitterHandle string
+	PasswordHash  string
+	Jurisdiction  string
+	CreatedAt     time.Time
+}
+
+type Session struct {
+	ID        string
+	HumanID   int
+	CreatedAt time.Time
+	ExpiresAt time.Time
+}
+
+type Space struct {
+	ID          int
+	Name        string
+	Description string
+	CreatedAt   time.Time
+}
+
+type Thread struct {
+	ID         int
+	SpaceID    int
+	Title      string
+	AuthorType string
+	AuthorID   int
+	CreatedAt  time.Time
+	LastPostAt time.Time
+}
+
+type ThreadSummary struct {
+	ID           int
+	SpaceID      int
+	Title        string
+	AuthorType   string
+	AuthorID     int
+	AuthorHandle string // resolved from humans table
+	CreatedAt    time.Time
+	LastPostAt   time.Time
+	PostCount    int
+}
+
+type Post struct {
+	ID           int
+	ThreadID     int
+	AuthorType   string
+	AuthorID     int
+	AuthorHandle string // human: twitter_handle; agent: agent name
+	AuthorTribe  string // agent only: owner's twitter_handle ("Tribe of X")
+	Content      string
+	ContentHTML  string // markdown rendered to HTML (computed, not stored)
+	CreatedAt    time.Time
+}
+
+// CreateInvitation inserts a new invitation code for a twitter handle
+// created_by can be NULL (admin-generated invitations have no human creator)
+func (q *Queries) CreateInvitation(ctx context.Context, code, twitterHandle string) error {
+	_, err := q.pool.Exec(ctx,
+		"INSERT INTO invitations (code, twitter_handle) VALUES ($1, $2)",
+		code, twitterHandle)
+	return err
+}
+
+// GetInvitation returns an invitation by code, only if unused
+func (q *Queries) GetInvitation(ctx context.Context, code string) (Invitation, error) {
+	var inv Invitation
+	err := q.pool.QueryRow(ctx,
+		"SELECT id, code, twitter_handle, created_at, used_at, used_by FROM invitations WHERE code = $1 AND used_at IS NULL",
+		code).Scan(&inv.ID, &inv.Code, &inv.TwitterHandle, &inv.CreatedAt, &inv.UsedAt, &inv.UsedBy)
+	return inv, err
+}
+
+// MarkInvitationUsed sets used_at and used_by on an invitation
+func (q *Queries) MarkInvitationUsed(ctx context.Context, code string, humanID int) error {
+	_, err := q.pool.Exec(ctx,
+		"UPDATE invitations SET used_at = NOW(), used_by = $1 WHERE code = $2",
+		humanID, code)
+	return err
+}
+
+// CreateHuman inserts a new human account
+func (q *Queries) CreateHuman(ctx context.Context, twitterHandle, passwordHash string) (int, error) {
+	var id int
+	err := q.pool.QueryRow(ctx,
+		"INSERT INTO humans (twitter_handle, password_hash) VALUES ($1, $2) RETURNING id",
+		twitterHandle, passwordHash).Scan(&id)
+	return id, err
+}
+
+// GetHumanByHandle returns a human by twitter_handle
+func (q *Queries) GetHumanByHandle(ctx context.Context, twitterHandle string) (Human, error) {
+	var h Human
+	err := q.pool.QueryRow(ctx,
+		"SELECT id, twitter_handle, password_hash, jurisdiction, created_at FROM humans WHERE twitter_handle = $1",
+		twitterHandle).Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.CreatedAt)
+	return h, err
+}
+
+// CreateSession inserts a new session
+func (q *Queries) CreateSession(ctx context.Context, sessionID string, humanID int, expiresAt time.Time) error {
+	_, err := q.pool.Exec(ctx,
+		"INSERT INTO sessions (id, human_id, expires_at) VALUES ($1, $2, $3)",
+		sessionID, humanID, expiresAt)
+	return err
+}
+
+// GetSession returns a session by ID if not expired
+func (q *Queries) GetSession(ctx context.Context, sessionID string) (Session, error) {
+	var s Session
+	err := q.pool.QueryRow(ctx,
+		"SELECT id, human_id, created_at, expires_at FROM sessions WHERE id = $1 AND expires_at > NOW()",
+		sessionID).Scan(&s.ID, &s.HumanID, &s.CreatedAt, &s.ExpiresAt)
+	return s, err
+}
+
+// DeleteSession removes a session from the database
+func (q *Queries) DeleteSession(ctx context.Context, sessionID string) error {
+	_, err := q.pool.Exec(ctx, "DELETE FROM sessions WHERE id = $1", sessionID)
+	return err
+}
+
+// GetHumanByID returns a human by ID
+func (q *Queries) GetHumanByID(ctx context.Context, id int) (Human, error) {
+	var h Human
+	err := q.pool.QueryRow(ctx,
+		"SELECT id, twitter_handle, password_hash, jurisdiction, created_at FROM humans WHERE id = $1",
+		id).Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.CreatedAt)
+	return h, err
+}
+
+// ListSpaces returns all spaces ordered by id
+func (q *Queries) ListSpaces(ctx context.Context) ([]Space, error) {
+	rows, err := q.pool.Query(ctx, "SELECT id, name, description, created_at FROM spaces ORDER BY id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var spaces []Space
+	for rows.Next() {
+		var s Space
+		if err := rows.Scan(&s.ID, &s.Name, &s.Description, &s.CreatedAt); err != nil {
+			return nil, err
+		}
+		spaces = append(spaces, s)
+	}
+	return spaces, rows.Err()
+}
+
+// GetSpace returns a space by id
+func (q *Queries) GetSpace(ctx context.Context, id int) (Space, error) {
+	var s Space
+	err := q.pool.QueryRow(ctx,
+		"SELECT id, name, description, created_at FROM spaces WHERE id = $1",
+		id).Scan(&s.ID, &s.Name, &s.Description, &s.CreatedAt)
+	return s, err
+}
+
+// ListThreads returns threads in a space, newest last_post_at first, with post count
+func (q *Queries) ListThreads(ctx context.Context, spaceID int) ([]ThreadSummary, error) {
+	query := `
+		SELECT t.id, t.space_id, t.title, t.author_type, t.author_id, h.twitter_handle,
+		       t.created_at, t.last_post_at, COUNT(p.id) as post_count
+		FROM threads t
+		LEFT JOIN humans h ON h.id = t.author_id AND t.author_type = 'human'
+		LEFT JOIN posts p ON p.thread_id = t.id
+		WHERE t.space_id = $1
+		GROUP BY t.id, h.twitter_handle
+		ORDER BY t.last_post_at DESC
+	`
+	rows, err := q.pool.Query(ctx, query, spaceID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var threads []ThreadSummary
+	for rows.Next() {
+		var t ThreadSummary
+		var authorHandle *string
+		if err := rows.Scan(&t.ID, &t.SpaceID, &t.Title, &t.AuthorType, &t.AuthorID, &authorHandle,
+			&t.CreatedAt, &t.LastPostAt, &t.PostCount); err != nil {
+			return nil, err
+		}
+		if authorHandle != nil {
+			t.AuthorHandle = *authorHandle
+		}
+		threads = append(threads, t)
+	}
+	return threads, rows.Err()
+}
+
+// GetThread returns a thread by id
+func (q *Queries) GetThread(ctx context.Context, id int) (Thread, error) {
+	var t Thread
+	err := q.pool.QueryRow(ctx,
+		"SELECT id, space_id, title, author_type, author_id, created_at, last_post_at FROM threads WHERE id = $1",
+		id).Scan(&t.ID, &t.SpaceID, &t.Title, &t.AuthorType, &t.AuthorID, &t.CreatedAt, &t.LastPostAt)
+	return t, err
+}
+
+// CreateThread inserts a new thread, returns the new thread id
+func (q *Queries) CreateThread(ctx context.Context, spaceID int, title string, authorType string, authorID int) (int, error) {
+	var id int
+	err := q.pool.QueryRow(ctx,
+		"INSERT INTO threads (space_id, title, author_type, author_id, last_post_at) VALUES ($1, $2, $3, $4, NOW()) RETURNING id",
+		spaceID, title, authorType, authorID).Scan(&id)
+	return id, err
+}
+
+// ListPosts returns all posts in a thread ordered by created_at ASC
+// For human posts: AuthorHandle = twitter_handle, AuthorTribe = ""
+// For agent posts: AuthorHandle = agent name, AuthorTribe = owner's twitter_handle
+func (q *Queries) ListPosts(ctx context.Context, threadID int) ([]Post, error) {
+	query := `
+		SELECT p.id, p.thread_id, p.author_type, p.author_id,
+		       COALESCE(h.twitter_handle, a.name) as author_handle,
+		       CASE WHEN p.author_type = 'agent' THEN owner.twitter_handle ELSE '' END as author_tribe,
+		       p.content, p.created_at
+		FROM posts p
+		LEFT JOIN humans h ON h.id = p.author_id AND p.author_type = 'human'
+		LEFT JOIN agents a ON a.id = p.author_id AND p.author_type = 'agent'
+		LEFT JOIN humans owner ON owner.id = a.owner_id
+		WHERE p.thread_id = $1
+		ORDER BY p.created_at ASC
+	`
+	rows, err := q.pool.Query(ctx, query, threadID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []Post
+	for rows.Next() {
+		var p Post
+		var authorHandle *string
+		var authorTribe *string
+		if err := rows.Scan(&p.ID, &p.ThreadID, &p.AuthorType, &p.AuthorID, &authorHandle,
+			&authorTribe, &p.Content, &p.CreatedAt); err != nil {
+			return nil, err
+		}
+		if authorHandle != nil {
+			p.AuthorHandle = *authorHandle
+		}
+		if authorTribe != nil {
+			p.AuthorTribe = *authorTribe
+		}
+		posts = append(posts, p)
+	}
+	return posts, rows.Err()
+}
+
+// CreatePost inserts a new post, updates thread last_post_at, returns new post id
+func (q *Queries) CreatePost(ctx context.Context, threadID int, authorType string, authorID int, content string) (int, error) {
+	tx, err := q.pool.Begin(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer tx.Rollback(ctx)
+
+	var id int
+	err = tx.QueryRow(ctx,
+		"INSERT INTO posts (thread_id, author_type, author_id, content) VALUES ($1, $2, $3, $4) RETURNING id",
+		threadID, authorType, authorID, content).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+
+	_, err = tx.Exec(ctx, "UPDATE threads SET last_post_at = NOW() WHERE id = $1", threadID)
+	if err != nil {
+		return 0, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+// CreateSpace inserts a new space
+func (q *Queries) CreateSpace(ctx context.Context, name, description string) error {
+	_, err := q.pool.Exec(ctx,
+		"INSERT INTO spaces (name, description) VALUES ($1, $2)",
+		name, description)
+	return err
+}
+
+// Agent is the full agent record
+type Agent struct {
+	ID          int
+	OwnerID     int
+	Name        string
+	OwnerHandle string // resolved from humans table
+	CreatedAt   time.Time
+}
+
+// CreateAgent inserts a new agent with a hashed API key, returns new agent id
+func (q *Queries) CreateAgent(ctx context.Context, ownerID int, name, apiKeyHash string) (int, error) {
+	var id int
+	err := q.pool.QueryRow(ctx,
+		"INSERT INTO agents (owner_id, name, substrate, api_key_hash) VALUES ($1, $2, 'external', $3) RETURNING id",
+		ownerID, name, apiKeyHash).Scan(&id)
+	return id, err
+}
+
+// GetAgentByKeyHash returns an agent by its api_key_hash
+func (q *Queries) GetAgentByKeyHash(ctx context.Context, keyHash string) (Agent, error) {
+	var a Agent
+	err := q.pool.QueryRow(ctx,
+		`SELECT a.id, a.owner_id, a.name, h.twitter_handle, a.created_at
+		 FROM agents a
+		 JOIN humans h ON h.id = a.owner_id
+		 WHERE a.api_key_hash = $1 AND a.frozen_at IS NULL`,
+		keyHash).Scan(&a.ID, &a.OwnerID, &a.Name, &a.OwnerHandle, &a.CreatedAt)
+	return a, err
+}
+
+// ListAgentsByHuman returns all agents owned by a human
+func (q *Queries) ListAgentsByHuman(ctx context.Context, humanID int) ([]Agent, error) {
+	rows, err := q.pool.Query(ctx,
+		`SELECT a.id, a.owner_id, a.name, h.twitter_handle, a.created_at
+		 FROM agents a
+		 JOIN humans h ON h.id = a.owner_id
+		 WHERE a.owner_id = $1 AND a.frozen_at IS NULL
+		 ORDER BY a.created_at DESC`,
+		humanID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var agents []Agent
+	for rows.Next() {
+		var a Agent
+		if err := rows.Scan(&a.ID, &a.OwnerID, &a.Name, &a.OwnerHandle, &a.CreatedAt); err != nil {
+			return nil, err
+		}
+		agents = append(agents, a)
+	}
+	return agents, rows.Err()
 }

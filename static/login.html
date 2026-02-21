@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign In — Synbridge</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg:        #080810;
+    --surface:   #0f0f1a;
+    --card:      #13131f;
+    --border:    #1e1e32;
+    --purple:    #8b5cf6;
+    --purple-dim:#5b3fa8;
+    --gold:      #f0a500;
+    --gold-dim:  #a87000;
+    --glow:      #a78bfa;
+    --text:      #e8e8f0;
+    --muted:     #6b6b8a;
+    --subtle:    #2a2a42;
+    --error:     #ef4444;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-weight: 300;
+    line-height: 1.7;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* NOISE */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.4;
+  }
+
+  /* AMBIENT GLOWS */
+  .ambient-purple {
+    position: fixed;
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(139,92,246,0.08) 0%, transparent 65%);
+    top: -200px; left: -150px;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .ambient-gold {
+    position: fixed;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(240,165,0,0.06) 0%, transparent 65%);
+    bottom: -150px; right: -150px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 420px;
+    padding: 2rem;
+  }
+
+  .logo {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+
+  .logo a {
+    font-family: 'DM Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 400;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    text-decoration: none;
+    color: var(--text);
+  }
+  .logo .syn { color: var(--purple); font-style: italic; }
+  .logo .bridge { color: var(--gold); }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 2.5rem;
+  }
+
+  h1 {
+    font-family: 'DM Mono', monospace;
+    font-size: 0.9rem;
+    font-weight: 400;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    color: var(--text);
+  }
+
+  .error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 3px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--error);
+    text-align: center;
+    display: none;
+  }
+  .error.visible { display: block; }
+
+  .form-group {
+    margin-bottom: 1.25rem;
+  }
+
+  label {
+    display: block;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 0.5rem;
+  }
+
+  input[type="text"],
+  input[type="password"] {
+    width: 100%;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 0.9rem 1rem;
+    color: var(--text);
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  input[type="text"]:focus,
+  input[type="password"]:focus {
+    border-color: rgba(139,92,246,0.5);
+    box-shadow: 0 0 15px rgba(139,92,246,0.1);
+  }
+  input::placeholder { color: var(--muted); opacity: 0.6; }
+
+  .btn-submit {
+    width: 100%;
+    font-family: 'DM Mono', monospace;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--bg);
+    background: linear-gradient(135deg, var(--purple), var(--gold-dim));
+    padding: 1rem;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-top: 0.5rem;
+  }
+  .btn-submit:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 20px rgba(139,92,246,0.4);
+  }
+
+  .footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .footer a {
+    color: var(--purple);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .footer a:hover { color: var(--glow); }
+
+  /* RESPONSIVE */
+  @media (max-width: 480px) {
+    .container { padding: 1.5rem; }
+    .card { padding: 1.75rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="ambient-purple"></div>
+<div class="ambient-gold"></div>
+
+<div class="container">
+  <div class="logo">
+    <a href="/"><span class="syn">Syn</span><span class="bridge">bridge</span></a>
+  </div>
+
+  <div class="card">
+    <h1>Sign In</h1>
+
+    <div class="error" id="error"></div>
+
+    <form action="/login" method="POST">
+      <div class="form-group">
+        <label for="handle">Twitter Handle</label>
+        <input type="text" id="handle" name="handle" placeholder="@yourhandle" required>
+      </div>
+
+      <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" placeholder="Your password" required>
+      </div>
+
+      <button type="submit" class="btn-submit">Sign In</button>
+    </form>
+  </div>
+
+  <div class="footer">
+    Need an account? <a href="/register">Create one</a>
+  </div>
+</div>
+
+<script>
+  // Display error from query param
+  const params = new URLSearchParams(window.location.search);
+  const error = params.get('error');
+  if (error) {
+    const errorEl = document.getElementById('error');
+    errorEl.textContent = error.replace(/\+/g, ' ');
+    errorEl.classList.add('visible');
+  }
+</script>
+
+</body>
+</html>

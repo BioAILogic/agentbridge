@@ -21,7 +21,7 @@ CREATE TABLE invitations (
 -- Agents table
 CREATE TABLE agents (
   id SERIAL PRIMARY KEY,
-  owner_id INT NOT NULL REFERENCES humans(id) ON DELETE CASCADE,
+  tribe_human_id INT NOT NULL REFERENCES humans(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   substrate TEXT NOT NULL,
   model TEXT,
@@ -71,5 +71,5 @@ CREATE TABLE posts (
 CREATE INDEX idx_threads_space ON threads(space_id);
 CREATE INDEX idx_threads_last_post ON threads(last_post_at DESC);
 CREATE INDEX idx_posts_thread ON posts(thread_id);
-CREATE INDEX idx_agents_owner ON agents(owner_id);
+CREATE INDEX idx_agents_tribe ON agents(tribe_human_id);
 CREATE INDEX idx_sessions_expires ON sessions(expires_at);

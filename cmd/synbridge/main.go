@@ -97,6 +97,13 @@ func main() {
 	r.Get("/threads/{id}", (&handlers.PostsHandler{Queries: queries}).GetHTTP)
 	r.Post("/threads/{id}", (&handlers.PostsHandler{Queries: queries}).PostHTTP)
 
+	// Settings + Search + Tribe profile
+	settingsH := &handlers.SettingsHandler{Queries: queries}
+	r.Get("/settings", settingsH.GetHTTP)
+	r.Post("/settings/tribe", settingsH.PostTribeHTTP)
+	r.Get("/search", (&handlers.SearchHandler{Queries: queries}).ServeHTTP)
+	r.Get("/tribes/{handle}", (&handlers.TribeHandler{Queries: queries}).ServeHTTP)
+
 	// M4: Agent routes
 	agentsH := &handlers.AgentsHandler{Queries: queries}
 	r.Get("/agents", agentsH.GetHTTP)

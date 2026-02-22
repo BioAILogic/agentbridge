@@ -39,7 +39,16 @@ type Human struct {
 	TwitterHandle string
 	PasswordHash  string
 	Jurisdiction  string
+	TribeName     *string // nullable; if NULL, display twitter_handle
 	CreatedAt     time.Time
+}
+
+// DisplayName returns tribe_name if set, otherwise twitter_handle
+func (h Human) DisplayName() string {
+	if h.TribeName != nil && *h.TribeName != "" {
+		return *h.TribeName
+	}
+	return h.TwitterHandle
 }
 
 type Session struct {
@@ -129,8 +138,8 @@ func (q *Queries) CreateHuman(ctx context.Context, twitterHandle, passwordHash s
 func (q *Queries) GetHumanByHandle(ctx context.Context, twitterHandle string) (Human, error) {
 	var h Human
 	err := q.pool.QueryRow(ctx,
-		"SELECT id, twitter_handle, password_hash, jurisdiction, created_at FROM humans WHERE twitter_handle = $1",
-		twitterHandle).Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.CreatedAt)
+		"SELECT id, twitter_handle, password_hash, jurisdiction, tribe_name, created_at FROM humans WHERE twitter_handle = $1",
+		twitterHandle).Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.TribeName, &h.CreatedAt)
 	return h, err
 }
 
@@ -161,8 +170,8 @@ func (q *Queries) DeleteSession(ctx context.Context, sessionID string) error {
 func (q *Queries) GetHumanByID(ctx context.Context, id int) (Human, error) {
 	var h Human
 	err := q.pool.QueryRow(ctx,
-		"SELECT id, twitter_handle, password_hash, jurisdiction, created_at FROM humans WHERE id = $1",
-		id).Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.CreatedAt)
+		"SELECT id, twitter_handle, password_hash, jurisdiction, tribe_name, created_at FROM humans WHERE id = $1",
+		id).Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.TribeName, &h.CreatedAt)
 	return h, err
 }
 
@@ -387,4 +396,101 @@ func (q *Queries) ListAgentsByHuman(ctx context.Context, humanID int) ([]Agent, 
 		agents = append(agents, a)
 	}
 	return agents, rows.Err()
+}
+
+// UpdateTribeName sets (or clears) the tribe_name for a human
+func (q *Queries) UpdateTribeName(ctx context.Context, humanID int, tribeName string) error {
+	var val interface{}
+	if tribeName == "" {
+		val = nil
+	} else {
+		val = tribeName
+	}
+	_, err := q.pool.Exec(ctx, "UPDATE humans SET tribe_name = $1 WHERE id = $2", val, humanID)
+	return err
+}
+
+// TribeSearchResult is a tribe card returned by search
+type TribeSearchResult struct {
+	Human  Human
+	Agents []Agent
+}
+
+// SearchTribes finds humans whose handle or tribe_name contains the query (case-insensitive)
+func (q *Queries) SearchTribes(ctx context.Context, query string) ([]TribeSearchResult, error) {
+	like := "%" + query + "%"
+	rows, err := q.pool.Query(ctx,
+		`SELECT id, twitter_handle, password_hash, jurisdiction, tribe_name, created_at
+		 FROM humans
+		 WHERE twitter_handle ILIKE $1 OR tribe_name ILIKE $1
+		 ORDER BY twitter_handle
+		 LIMIT 20`,
+		like)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var results []TribeSearchResult
+	for rows.Next() {
+		var h Human
+		if err := rows.Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.TribeName, &h.CreatedAt); err != nil {
+			return nil, err
+		}
+		agents, _ := q.ListAgentsByHuman(ctx, h.ID)
+		results = append(results, TribeSearchResult{Human: h, Agents: agents})
+	}
+	return results, rows.Err()
+}
+
+// TribePost is a post with enough context to display in a tribe profile
+type TribePost struct {
+	PostID      int
+	ThreadID    int
+	ThreadTitle string
+	SpaceID     int
+	SpaceName   string
+	AuthorType  string
+	AuthorName  string // handle or agent name
+	Content     string
+	CreatedAt   time.Time
+}
+
+// GetTribePosts returns all posts by a human and their agents, newest first
+func (q *Queries) GetTribePosts(ctx context.Context, humanID int) ([]TribePost, error) {
+	query := `
+		SELECT p.id, t.id, t.title, s.id, s.name,
+		       p.author_type,
+		       COALESCE(h.twitter_handle, a.name) as author_name,
+		       p.content, p.created_at
+		FROM posts p
+		JOIN threads t ON t.id = p.thread_id
+		JOIN spaces s ON s.id = t.space_id
+		LEFT JOIN humans h ON h.id = p.author_id AND p.author_type = 'human'
+		LEFT JOIN agents a ON a.id = p.author_id AND p.author_type = 'agent'
+		WHERE (p.author_type = 'human' AND p.author_id = $1)
+		   OR (p.author_type = 'agent' AND a.owner_id = $1)
+		ORDER BY p.created_at DESC
+		LIMIT 200
+	`
+	rows, err := q.pool.Query(ctx, query, humanID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var posts []TribePost
+	for rows.Next() {
+		var p TribePost
+		var authorName *string
+		if err := rows.Scan(&p.PostID, &p.ThreadID, &p.ThreadTitle, &p.SpaceID, &p.SpaceName,
+			&p.AuthorType, &authorName, &p.Content, &p.CreatedAt); err != nil {
+			return nil, err
+		}
+		if authorName != nil {
+			p.AuthorName = *authorName
+		}
+		posts = append(posts, p)
+	}
+	return posts, rows.Err()
 }

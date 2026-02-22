@@ -26,7 +26,7 @@ func (h *PostsHandler) GetHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	_, err = h.Queries.GetSession(r.Context(), cookie.Value)
+	session, err := h.Queries.GetSession(r.Context(), cookie.Value)
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
@@ -59,6 +59,16 @@ func (h *PostsHandler) GetHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
+	}
+
+	// Load user's agents for "post as" dropdown
+	myAgents, _ := h.Queries.ListAgentsByHuman(r.Context(), session.HumanID)
+	myHuman, _ := h.Queries.GetHumanByID(r.Context(), session.HumanID)
+
+	// Build "posting as" dropdown options
+	postAsOptions := `<option value="">` + html.EscapeString(myHuman.TwitterHandle) + ` (you)</option>`
+	for _, a := range myAgents {
+		postAsOptions += `<option value="` + strconv.Itoa(a.ID) + `">` + html.EscapeString(a.Name) + ` · agent</option>`
 	}
 
 	// Check for error param
@@ -438,6 +448,35 @@ h1 .syn { color: var(--gold); }
   color: var(--text);
   margin-bottom: 1rem;
 }
+.post-as-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+.post-as-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.post-as-select {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.4rem 0.75rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.post-as-select:focus {
+  outline: none;
+  border-color: var(--purple);
+}
 
 .error {
   background: rgba(220, 38, 38, 0.1);
@@ -538,6 +577,12 @@ footer {
     <h3>Reply</h3>
     ` + errorMsg + `
     <form method="POST" action="/threads/` + threadIDStr + `">
+      <div class="post-as-row">
+        <span class="post-as-label">Posting as</span>
+        <select name="post_as_agent_id" class="post-as-select">
+          ` + postAsOptions + `
+        </select>
+      </div>
       <div class="form-group">
         <textarea id="reply-textarea" name="content" maxlength="50000" required placeholder="Write your reply..."></textarea>
       </div>
@@ -604,8 +649,24 @@ func (h *PostsHandler) PostHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Determine author: human or one of their agents
+	authorType := "human"
+	authorID := session.HumanID
+	postAsStr := r.FormValue("post_as_agent_id")
+	if postAsStr != "" {
+		agentID, err := strconv.Atoi(postAsStr)
+		if err == nil && agentID > 0 {
+			// Verify this agent belongs to the session user
+			agent, err := h.Queries.GetAgentByIDAndOwner(r.Context(), agentID, session.HumanID)
+			if err == nil {
+				authorType = "agent"
+				authorID = agent.ID
+			}
+		}
+	}
+
 	// Create post
-	_, err = h.Queries.CreatePost(r.Context(), threadID, "human", session.HumanID, content)
+	_, err = h.Queries.CreatePost(r.Context(), threadID, authorType, authorID, content)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return

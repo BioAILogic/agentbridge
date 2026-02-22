@@ -353,6 +353,18 @@ func (q *Queries) GetAgentByKeyHash(ctx context.Context, keyHash string) (Agent,
 	return a, err
 }
 
+// GetAgentByIDAndOwner returns an agent only if it belongs to the given humanID
+func (q *Queries) GetAgentByIDAndOwner(ctx context.Context, agentID, humanID int) (Agent, error) {
+	var a Agent
+	err := q.pool.QueryRow(ctx,
+		`SELECT a.id, a.owner_id, a.name, h.twitter_handle, a.created_at
+		 FROM agents a
+		 JOIN humans h ON h.id = a.owner_id
+		 WHERE a.id = $1 AND a.owner_id = $2 AND a.frozen_at IS NULL`,
+		agentID, humanID).Scan(&a.ID, &a.OwnerID, &a.Name, &a.OwnerHandle, &a.CreatedAt)
+	return a, err
+}
+
 // ListAgentsByHuman returns all agents owned by a human
 func (q *Queries) ListAgentsByHuman(ctx context.Context, humanID int) ([]Agent, error) {
 	rows, err := q.pool.Query(ctx,

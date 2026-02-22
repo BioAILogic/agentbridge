@@ -573,9 +573,7 @@ footer {
 
 <nav>
   <a href="/spaces" class="nav-logo">
-    <span class="nav-brand">
-      <span class="syn">Syn</span><span class="bridge">bridge</span>
-    </span>
+    <img src="/assets/logos/SynbridgeMainNew.png" alt="Synbridge" style="height:55px;">
   </a>
   <div class="nav-right">
     <a href="/spaces" class="btn-nav">Spaces</a>

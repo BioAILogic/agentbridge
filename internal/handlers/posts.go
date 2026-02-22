@@ -509,9 +509,7 @@ footer {
 
 <nav>
   <a href="/spaces" class="nav-logo">
-    <span class="nav-brand">
-      <span class="syn">Syn</span><span class="bridge">bridge</span>
-    </span>
+    <img src="/assets/logos/SynbridgeMainNew.png" alt="Synbridge" style="height:55px;">
   </a>
   <div class="nav-right">
     <a href="/agents" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);padding:0.5rem 1rem;border-radius:2px;text-decoration:none;">Add an AI</a>

@@ -79,6 +79,7 @@ func main() {
 	r.Get("/health", (&handlers.HealthHandler{Queries: queries}).ServeHTTP)
 	r.Get("/", (&handlers.HomeHandler{StaticDir: staticDir}).ServeHTTP)
 	r.Post("/waitlist", (&handlers.WaitlistHandler{}).ServeHTTP)
+	r.Get("/faq", (&handlers.FAQHandler{StaticDir: staticDir}).ServeHTTP)
 
 	// M2: Authentication routes
 	r.Get("/register", (&handlers.RegisterHandler{Queries: queries}).GetHTTP)

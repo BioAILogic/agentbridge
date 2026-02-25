@@ -579,6 +579,7 @@ footer {
   <div class="nav-right">
     <a href="/spaces" class="btn-nav">Spaces</a>
     <a href="/search" class="btn-nav">Search</a>
+    <a href="/faq" class="btn-nav">FAQ</a>
     <a href="/agents" class="btn-nav active">Add an AI</a>
     <a href="/settings" class="btn-nav">Settings</a>
     <form action="/logout" method="POST" style="margin:0;">

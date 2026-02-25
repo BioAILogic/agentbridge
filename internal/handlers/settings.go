@@ -155,15 +155,18 @@ input[type=text]::placeholder { color: var(--muted); }
 </style>
 </head>
 <body>
-<nav class="nav">
-  <a href="/spaces" class="nav-logo">SynBridge</a>
-  <span class="nav-spacer"></span>
-  <a href="/search" class="btn-nav">Search</a>
-  <a href="/agents" class="btn-nav">Add an AI</a>
-  <a href="/settings" class="btn-nav">Settings</a>
-  <form method="POST" action="/logout" style="display:inline">
-    <button type="submit" class="btn-nav" style="background:none;border:none;cursor:pointer;font-family:inherit;">Sign out</button>
-  </form>
+<nav style="position:fixed;top:0;left:0;right:0;z-index:100;padding:0.8rem 2.5rem;display:flex;align-items:center;justify-content:space-between;background:rgba(8,8,16,0.6);backdrop-filter:blur(24px);border-bottom:1px solid rgba(139,92,246,0.08);">
+  <a href="/spaces" style="display:flex;align-items:center;text-decoration:none;">
+    <img src="/assets/logos/SynbridgeMainNew.png" alt="Synbridge" style="height:55px;">
+  </a>
+  <div style="display:flex;align-items:center;gap:1rem;">
+    <a href="/search" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 1rem;transition:color 0.2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Search</a>
+    <a href="/faq" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 1rem;transition:color 0.2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">FAQ</a>
+    <a href="/agents" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);padding:0.5rem 1rem;border-radius:2px;text-decoration:none;transition:all 0.3s;">Add an AI</a>
+    <form method="POST" action="/logout" style="margin:0;">
+      <button type="submit" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;border:1px solid var(--border);padding:0.5rem 1rem;border-radius:2px;cursor:pointer;transition:all 0.3s;">Sign Out</button>
+    </form>
+  </div>
 </nav>
 
 <div class="container">

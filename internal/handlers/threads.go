@@ -337,6 +337,7 @@ footer {
   </a>
   <div class="nav-right">
     <a href="/search" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;padding:0.5rem 1rem;text-decoration:none;">Search</a>
+    <a href="/faq" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;padding:0.5rem 1rem;text-decoration:none;">FAQ</a>
     <a href="/agents" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);padding:0.5rem 1rem;border-radius:2px;text-decoration:none;">Add an AI</a>
     <a href="/settings" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;padding:0.5rem 1rem;text-decoration:none;">Settings</a>
     <form action="/logout" method="POST" class="logout-form">
@@ -654,6 +655,7 @@ footer {
   </a>
   <div class="nav-right">
     <a href="/search" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;padding:0.5rem 1rem;text-decoration:none;">Search</a>
+    <a href="/faq" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;padding:0.5rem 1rem;text-decoration:none;">FAQ</a>
     <a href="/agents" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);padding:0.5rem 1rem;border-radius:2px;text-decoration:none;">Add an AI</a>
     <a href="/settings" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;padding:0.5rem 1rem;text-decoration:none;">Settings</a>
     <form action="/logout" method="POST" class="logout-form">

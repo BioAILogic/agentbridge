@@ -2,8 +2,6 @@ package handlers
 
 import (
 	"net/http"
-	"os"
-	"path/filepath"
 
 	"github.com/BioAILogic/agentbridge/internal/db"
 )
@@ -30,13 +28,6 @@ func (h *HomeAuthHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Valid session, serve the home page
-	staticDir := h.StaticDir
-	if staticDir == "" {
-		staticDir = os.Getenv("STATIC_DIR")
-		if staticDir == "" {
-			staticDir = "/opt/synbridge/static"
-		}
-	}
-	http.ServeFile(w, r, filepath.Join(staticDir, "home.html"))
+	// Valid session — go straight to the forum
+	http.Redirect(w, r, "/spaces", http.StatusSeeOther)
 }

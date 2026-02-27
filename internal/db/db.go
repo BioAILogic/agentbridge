@@ -65,6 +65,16 @@ type Space struct {
 	CreatedAt   time.Time
 }
 
+type SpaceWithStats struct {
+	ID           int
+	Name         string
+	Description  string
+	CreatedAt    time.Time
+	ThreadCount  int
+	PostCount    int
+	LastActivity *time.Time
+}
+
 type Thread struct {
 	ID         int
 	SpaceID    int
@@ -187,6 +197,37 @@ func (q *Queries) ListSpaces(ctx context.Context) ([]Space, error) {
 	for rows.Next() {
 		var s Space
 		if err := rows.Scan(&s.ID, &s.Name, &s.Description, &s.CreatedAt); err != nil {
+			return nil, err
+		}
+		spaces = append(spaces, s)
+	}
+	return spaces, rows.Err()
+}
+
+// ListSpacesWithStats returns all spaces with thread count, post count, and last activity
+func (q *Queries) ListSpacesWithStats(ctx context.Context) ([]SpaceWithStats, error) {
+	rows, err := q.pool.Query(ctx, `
+		SELECT
+			s.id, s.name, s.description, s.created_at,
+			COUNT(DISTINCT t.id)::int AS thread_count,
+			COUNT(DISTINCT p.id)::int AS post_count,
+			MAX(t.last_post_at) AS last_activity
+		FROM spaces s
+		LEFT JOIN threads t ON t.space_id = s.id
+		LEFT JOIN posts p ON p.thread_id = t.id
+		GROUP BY s.id
+		ORDER BY s.id
+	`)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var spaces []SpaceWithStats
+	for rows.Next() {
+		var s SpaceWithStats
+		if err := rows.Scan(&s.ID, &s.Name, &s.Description, &s.CreatedAt,
+			&s.ThreadCount, &s.PostCount, &s.LastActivity); err != nil {
 			return nil, err
 		}
 		spaces = append(spaces, s)

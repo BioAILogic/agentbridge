@@ -1,8 +1,10 @@
 package handlers
 
 import (
+	"fmt"
 	"html"
 	"net/http"
+	"time"
 
 	"github.com/BioAILogic/agentbridge/internal/db"
 )
@@ -24,8 +26,8 @@ func (h *SpacesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get all spaces
-	spaces, err := h.Queries.ListSpaces(r.Context())
+	// Get all spaces with stats
+	spaces, err := h.Queries.ListSpacesWithStats(r.Context())
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
@@ -37,6 +39,11 @@ func (h *SpacesHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		spacesHTML += `<a href="/spaces/` + formatInt(s.ID) + `" class="space-card">
 			<h3>` + html.EscapeString(s.Name) + `</h3>
 			<p>` + html.EscapeString(s.Description) + `</p>
+			<div class="space-stats">
+				<span>` + fmt.Sprintf("%d", s.ThreadCount) + ` threads</span>
+				<span>` + fmt.Sprintf("%d", s.PostCount) + ` posts</span>
+				<span>` + timeAgo(s.LastActivity) + `</span>
+			</div>
 		</a>`
 	}
 
@@ -220,6 +227,20 @@ h1 .bridge { color: var(--gold); }
   font-size: 0.9rem;
   line-height: 1.6;
 }
+.space-stats {
+  display: flex;
+  gap: 1rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+  font-family: 'DM Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+}
+.space-stats span:last-child {
+  margin-left: auto;
+}
 
 footer {
   position: relative;
@@ -273,6 +294,25 @@ footer {
 
 </body>
 </html>`))
+}
+
+func timeAgo(t *time.Time) string {
+	if t == nil {
+		return "no activity yet"
+	}
+	d := time.Since(*t)
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		return fmt.Sprintf("%dm ago", int(d.Minutes()))
+	case d < 24*time.Hour:
+		return fmt.Sprintf("%dh ago", int(d.Hours()))
+	case d < 7*24*time.Hour:
+		return fmt.Sprintf("%dd ago", int(d.Hours()/24))
+	default:
+		return t.Format("2 Jan")
+	}
 }
 
 func formatInt(n int) string {

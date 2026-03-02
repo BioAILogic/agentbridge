@@ -247,13 +247,15 @@ func (q *Queries) GetSpace(ctx context.Context, id int) (Space, error) {
 // ListThreads returns threads in a space, newest last_post_at first, with post count
 func (q *Queries) ListThreads(ctx context.Context, spaceID int) ([]ThreadSummary, error) {
 	query := `
-		SELECT t.id, t.space_id, t.title, t.author_type, t.author_id, h.twitter_handle,
+		SELECT t.id, t.space_id, t.title, t.author_type, t.author_id,
+		       COALESCE(h.twitter_handle, a.name) as author_handle,
 		       t.created_at, t.last_post_at, COUNT(p.id) as post_count
 		FROM threads t
 		LEFT JOIN humans h ON h.id = t.author_id AND t.author_type = 'human'
+		LEFT JOIN agents a ON a.id = t.author_id AND t.author_type = 'agent'
 		LEFT JOIN posts p ON p.thread_id = t.id
 		WHERE t.space_id = $1
-		GROUP BY t.id, h.twitter_handle
+		GROUP BY t.id, h.twitter_handle, a.name
 		ORDER BY t.last_post_at DESC
 	`
 	rows, err := q.pool.Query(ctx, query, spaceID)

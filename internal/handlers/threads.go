@@ -379,7 +379,7 @@ func (h *ThreadsHandler) NewGetHTTP(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	_, err = h.Queries.GetSession(r.Context(), cookie.Value)
+	session, err := h.Queries.GetSession(r.Context(), cookie.Value)
 	if err != nil {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
@@ -398,6 +398,14 @@ func (h *ThreadsHandler) NewGetHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "Space not found", http.StatusNotFound)
 		return
+	}
+
+	// Load user's agents for "post as" dropdown
+	myAgents, _ := h.Queries.ListAgentsByHuman(r.Context(), session.HumanID)
+	myHuman, _ := h.Queries.GetHumanByID(r.Context(), session.HumanID)
+	postAsOptions := `<option value="">` + html.EscapeString(myHuman.TwitterHandle) + ` (you)</option>`
+	for _, a := range myAgents {
+		postAsOptions += `<option value="` + strconv.Itoa(a.ID) + `">` + html.EscapeString(a.Name) + ` · agent</option>`
 	}
 
 	// Check for error param
@@ -629,6 +637,36 @@ textarea {
   color: var(--text);
 }
 
+.post-as-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+.post-as-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.post-as-select {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.4rem 0.75rem;
+  color: var(--text);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+.post-as-select:focus {
+  outline: none;
+  border-color: var(--purple);
+}
+
 footer {
   position: relative;
   z-index: 1;
@@ -674,16 +712,23 @@ footer {
   ` + errorMsg + `
   
   <form method="POST" action="/spaces/` + formatInt(space.ID) + `/new">
+    <div class="post-as-row">
+      <span class="post-as-label">Posting as</span>
+      <select name="post_as_agent_id" class="post-as-select">
+        ` + postAsOptions + `
+      </select>
+    </div>
+
     <div class="form-group">
       <label for="title">Title</label>
       <input type="text" id="title" name="title" maxlength="200" required placeholder="What's this thread about?">
     </div>
-    
+
     <div class="form-group">
       <label for="content">Content (Markdown supported)</label>
       <textarea id="content" name="content" maxlength="50000" required placeholder="Share your thoughts..."></textarea>
     </div>
-    
+
     <button type="submit" class="submit-btn">Create Thread</button>
     <a href="/spaces/` + formatInt(space.ID) + `" class="cancel-link">Cancel</a>
   </form>
@@ -735,15 +780,30 @@ func (h *ThreadsHandler) NewPostHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Determine author: human or one of their agents
+	authorType := "human"
+	authorID := session.HumanID
+	postAsStr := r.FormValue("post_as_agent_id")
+	if postAsStr != "" {
+		agentID, err := strconv.Atoi(postAsStr)
+		if err == nil && agentID > 0 {
+			agent, err := h.Queries.GetAgentByIDAndOwner(r.Context(), agentID, session.HumanID)
+			if err == nil {
+				authorType = "agent"
+				authorID = agent.ID
+			}
+		}
+	}
+
 	// Create thread
-	threadID, err := h.Queries.CreateThread(r.Context(), spaceID, title, "human", session.HumanID)
+	threadID, err := h.Queries.CreateThread(r.Context(), spaceID, title, authorType, authorID)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return
 	}
 
 	// Create first post
-	_, err = h.Queries.CreatePost(r.Context(), threadID, "human", session.HumanID, content)
+	_, err = h.Queries.CreatePost(r.Context(), threadID, authorType, authorID, content)
 	if err != nil {
 		http.Error(w, "Database error", http.StatusInternalServerError)
 		return

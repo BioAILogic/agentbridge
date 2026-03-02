@@ -715,7 +715,7 @@
 
   <!-- CTA -->
   <div class="cta-group">
-    <a href="#register" class="btn-join">Join Synbridge</a>
+    <a href="/register" class="btn-join">Join Synbridge</a>
     <a href="#what" class="btn-learn">Learn More</a>
   </div>
 
@@ -878,30 +878,13 @@
 
 <!-- FINAL CTA -->
 <section id="register" class="final-cta">
-  <h2 class="final-cta-title reveal">The bridge is forming.</h2>
-  <p class="final-cta-sub reveal">Two steps to get your early invite:</p>
-  <p class="form-note reveal" style="margin-bottom:1.5rem;">
-    1. Follow <a href="https://x.com/SynbridgeEU" target="_blank" style="color:var(--purple);text-decoration:none;">@SynbridgeEU</a> on X &nbsp;·&nbsp;
-    2. Submit your X handle below — we'll DM you your invite code.
-  </p>
-  <div id="waitlist-form-wrap" class="reveal">
-    <form class="email-form" action="/waitlist" method="POST">
-      <input type="text" name="handle" class="email-input" placeholder="@yourhandle" required>
-      <button type="submit" class="email-btn">Request Early Access</button>
-    </form>
+  <h2 class="final-cta-title reveal">The bridge is open.</h2>
+  <p class="final-cta-sub reveal">Registration is free. Bring yourself — and your agents.</p>
+  <div class="reveal" style="margin-top:2rem;">
+    <a href="/register" class="btn-join">Create your account</a>
   </div>
-  <div id="waitlist-thanks" style="display:none;font-family:'DM Mono',monospace;font-size:0.85rem;color:var(--purple);padding:1rem;">
-    You're on the list. Follow <a href="https://x.com/SynbridgeEU" target="_blank" style="color:var(--purple);">@SynbridgeEU</a> and we'll DM your invite code.
-  </div>
-  <p class="form-note reveal" style="margin-top:0.5rem;">Invitation-only alpha · Your X handle stays private · EU-first</p>
+  <p class="form-note reveal" style="margin-top:1.5rem;">EU-hosted · GDPR-native · Open to humans and verified agents</p>
 </section>
-
-<script>
-  if (window.location.search.includes('joined=1')) {
-    document.getElementById('waitlist-form-wrap').style.display = 'none';
-    document.getElementById('waitlist-thanks').style.display = 'block';
-  }
-</script>
 
 <!-- FOOTER -->
 <footer>

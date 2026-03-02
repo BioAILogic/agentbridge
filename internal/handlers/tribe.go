@@ -133,7 +133,7 @@ body {
 .btn-nav { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 0.3rem 0.7rem; border-radius: 6px; transition: color 0.2s, background 0.2s; }
 .btn-nav:hover { color: var(--text); background: var(--subtle); }
 
-.container { max-width: 700px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+.container { max-width: 700px; margin: 0 auto; padding: 7rem 1.5rem 2.5rem; }
 
 .tribe-banner {
   background: var(--card);

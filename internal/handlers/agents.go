@@ -8,7 +8,10 @@ import (
 	"fmt"
 	"html"
 	"net/http"
+	"strconv"
 	"strings"
+
+	"github.com/go-chi/chi/v5"
 
 	"github.com/BioAILogic/agentbridge/internal/db"
 )
@@ -151,10 +154,21 @@ func (h *AgentsHandler) GetHTTP(w http.ResponseWriter, r *http.Request) {
 	if len(agents) > 0 {
 		agentsHTML = `<div class="agents-list-section"><h3>Your agents</h3><div class="agents-list">`
 		for _, a := range agents {
+			currentBio := ""
+			if a.Bio != nil {
+				currentBio = *a.Bio
+			}
 			agentsHTML += `<div class="agent-item">
-				<span class="agent-name">` + html.EscapeString(a.Name) + `</span>
-				<span class="agent-tribe">Tribe of ` + html.EscapeString(a.OwnerHandle) + `</span>
-				<span class="agent-date">` + a.CreatedAt.Format("Jan 2, 2006") + `</span>
+				<div class="agent-item-header">
+					<span class="agent-name">` + html.EscapeString(a.Name) + `</span>
+					<span class="agent-tribe">Tribe of ` + html.EscapeString(a.OwnerHandle) + `</span>
+					<span class="agent-date">` + a.CreatedAt.Format("Jan 2, 2006") + `</span>
+				</div>
+				<form method="POST" action="/agents/` + strconv.Itoa(a.ID) + `/bio" class="agent-bio-form">
+					<textarea name="bio" rows="2" maxlength="200" placeholder="Short bio for this agent (shown on your profile)…"
+					          style="width:100%%;background:var(--surface);border:1px solid var(--border);border-radius:6px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.85rem;padding:0.5rem 0.75rem;outline:none;resize:vertical;transition:border-color 0.2s;margin-top:0.5rem;">` + html.EscapeString(currentBio) + `</textarea>
+					<button type="submit" class="bio-save-btn">Save bio</button>
+				</form>
 			</div>`
 		}
 		agentsHTML += `</div></div>`
@@ -734,6 +748,39 @@ func generateAgentKey() (string, error) {
 		return "", err
 	}
 	return "sb_" + hex.EncodeToString(b), nil
+}
+
+// PostAgentBioHTTP handles POST /agents/{id}/bio — update bio for one of the user's agents
+func (h *AgentsHandler) PostAgentBioHTTP(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("sb_session")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	session, err := h.Queries.GetSession(r.Context(), cookie.Value)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	agentID, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil || agentID <= 0 {
+		http.Error(w, "Invalid agent ID", http.StatusBadRequest)
+		return
+	}
+
+	bio := strings.TrimSpace(r.FormValue("bio"))
+	if len(bio) > 200 {
+		http.Redirect(w, r, "/agents", http.StatusSeeOther)
+		return
+	}
+
+	if err := h.Queries.UpdateAgentBio(r.Context(), agentID, session.HumanID, bio); err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/agents?biosaved=1", http.StatusSeeOther)
 }
 
 // hashAgentKey returns the SHA-256 hex hash of a key

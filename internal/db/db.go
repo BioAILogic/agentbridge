@@ -40,6 +40,8 @@ type Human struct {
 	PasswordHash  string
 	Jurisdiction  string
 	TribeName     *string // nullable; if NULL, display twitter_handle
+	Bio           *string // nullable
+	Location      *string // nullable
 	CreatedAt     time.Time
 }
 
@@ -148,8 +150,8 @@ func (q *Queries) CreateHuman(ctx context.Context, twitterHandle, passwordHash s
 func (q *Queries) GetHumanByHandle(ctx context.Context, twitterHandle string) (Human, error) {
 	var h Human
 	err := q.pool.QueryRow(ctx,
-		"SELECT id, twitter_handle, password_hash, jurisdiction, tribe_name, created_at FROM humans WHERE twitter_handle = $1",
-		twitterHandle).Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.TribeName, &h.CreatedAt)
+		"SELECT id, twitter_handle, password_hash, jurisdiction, tribe_name, bio, location, created_at FROM humans WHERE twitter_handle = $1",
+		twitterHandle).Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.TribeName, &h.Bio, &h.Location, &h.CreatedAt)
 	return h, err
 }
 
@@ -180,8 +182,8 @@ func (q *Queries) DeleteSession(ctx context.Context, sessionID string) error {
 func (q *Queries) GetHumanByID(ctx context.Context, id int) (Human, error) {
 	var h Human
 	err := q.pool.QueryRow(ctx,
-		"SELECT id, twitter_handle, password_hash, jurisdiction, tribe_name, created_at FROM humans WHERE id = $1",
-		id).Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.TribeName, &h.CreatedAt)
+		"SELECT id, twitter_handle, password_hash, jurisdiction, tribe_name, bio, location, created_at FROM humans WHERE id = $1",
+		id).Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.TribeName, &h.Bio, &h.Location, &h.CreatedAt)
 	return h, err
 }
 
@@ -381,6 +383,7 @@ type Agent struct {
 	OwnerID     int
 	Name        string
 	OwnerHandle string // resolved from humans table
+	Bio         *string // nullable
 	CreatedAt   time.Time
 }
 
@@ -397,11 +400,11 @@ func (q *Queries) CreateAgent(ctx context.Context, ownerID int, name, apiKeyHash
 func (q *Queries) GetAgentByKeyHash(ctx context.Context, keyHash string) (Agent, error) {
 	var a Agent
 	err := q.pool.QueryRow(ctx,
-		`SELECT a.id, a.owner_id, a.name, h.twitter_handle, a.created_at
+		`SELECT a.id, a.owner_id, a.name, h.twitter_handle, a.bio, a.created_at
 		 FROM agents a
 		 JOIN humans h ON h.id = a.owner_id
 		 WHERE a.api_key_hash = $1 AND a.frozen_at IS NULL`,
-		keyHash).Scan(&a.ID, &a.OwnerID, &a.Name, &a.OwnerHandle, &a.CreatedAt)
+		keyHash).Scan(&a.ID, &a.OwnerID, &a.Name, &a.OwnerHandle, &a.Bio, &a.CreatedAt)
 	return a, err
 }
 
@@ -409,18 +412,18 @@ func (q *Queries) GetAgentByKeyHash(ctx context.Context, keyHash string) (Agent,
 func (q *Queries) GetAgentByIDAndOwner(ctx context.Context, agentID, humanID int) (Agent, error) {
 	var a Agent
 	err := q.pool.QueryRow(ctx,
-		`SELECT a.id, a.owner_id, a.name, h.twitter_handle, a.created_at
+		`SELECT a.id, a.owner_id, a.name, h.twitter_handle, a.bio, a.created_at
 		 FROM agents a
 		 JOIN humans h ON h.id = a.owner_id
 		 WHERE a.id = $1 AND a.owner_id = $2 AND a.frozen_at IS NULL`,
-		agentID, humanID).Scan(&a.ID, &a.OwnerID, &a.Name, &a.OwnerHandle, &a.CreatedAt)
+		agentID, humanID).Scan(&a.ID, &a.OwnerID, &a.Name, &a.OwnerHandle, &a.Bio, &a.CreatedAt)
 	return a, err
 }
 
 // ListAgentsByHuman returns all agents owned by a human
 func (q *Queries) ListAgentsByHuman(ctx context.Context, humanID int) ([]Agent, error) {
 	rows, err := q.pool.Query(ctx,
-		`SELECT a.id, a.owner_id, a.name, h.twitter_handle, a.created_at
+		`SELECT a.id, a.owner_id, a.name, h.twitter_handle, a.bio, a.created_at
 		 FROM agents a
 		 JOIN humans h ON h.id = a.owner_id
 		 WHERE a.owner_id = $1 AND a.frozen_at IS NULL
@@ -433,7 +436,7 @@ func (q *Queries) ListAgentsByHuman(ctx context.Context, humanID int) ([]Agent, 
 	var agents []Agent
 	for rows.Next() {
 		var a Agent
-		if err := rows.Scan(&a.ID, &a.OwnerID, &a.Name, &a.OwnerHandle, &a.CreatedAt); err != nil {
+		if err := rows.Scan(&a.ID, &a.OwnerID, &a.Name, &a.OwnerHandle, &a.Bio, &a.CreatedAt); err != nil {
 			return nil, err
 		}
 		agents = append(agents, a)
@@ -453,6 +456,42 @@ func (q *Queries) UpdateTribeName(ctx context.Context, humanID int, tribeName st
 	return err
 }
 
+// UpdateHumanBio sets (or clears) the bio for a human
+func (q *Queries) UpdateHumanBio(ctx context.Context, humanID int, bio string) error {
+	var val interface{}
+	if bio == "" {
+		val = nil
+	} else {
+		val = bio
+	}
+	_, err := q.pool.Exec(ctx, "UPDATE humans SET bio = $1 WHERE id = $2", val, humanID)
+	return err
+}
+
+// UpdateHumanLocation sets (or clears) the location for a human
+func (q *Queries) UpdateHumanLocation(ctx context.Context, humanID int, location string) error {
+	var val interface{}
+	if location == "" {
+		val = nil
+	} else {
+		val = location
+	}
+	_, err := q.pool.Exec(ctx, "UPDATE humans SET location = $1 WHERE id = $2", val, humanID)
+	return err
+}
+
+// UpdateAgentBio sets (or clears) the bio for an agent (only if owned by humanID)
+func (q *Queries) UpdateAgentBio(ctx context.Context, agentID, humanID int, bio string) error {
+	var val interface{}
+	if bio == "" {
+		val = nil
+	} else {
+		val = bio
+	}
+	_, err := q.pool.Exec(ctx, "UPDATE agents SET bio = $1 WHERE id = $2 AND owner_id = $3", val, agentID, humanID)
+	return err
+}
+
 // TribeSearchResult is a tribe card returned by search
 type TribeSearchResult struct {
 	Human  Human
@@ -463,7 +502,7 @@ type TribeSearchResult struct {
 func (q *Queries) SearchTribes(ctx context.Context, query string) ([]TribeSearchResult, error) {
 	like := "%" + query + "%"
 	rows, err := q.pool.Query(ctx,
-		`SELECT id, twitter_handle, password_hash, jurisdiction, tribe_name, created_at
+		`SELECT id, twitter_handle, password_hash, jurisdiction, tribe_name, bio, location, created_at
 		 FROM humans
 		 WHERE twitter_handle ILIKE $1 OR tribe_name ILIKE $1
 		 ORDER BY twitter_handle
@@ -477,7 +516,7 @@ func (q *Queries) SearchTribes(ctx context.Context, query string) ([]TribeSearch
 	var results []TribeSearchResult
 	for rows.Next() {
 		var h Human
-		if err := rows.Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.TribeName, &h.CreatedAt); err != nil {
+		if err := rows.Scan(&h.ID, &h.TwitterHandle, &h.PasswordHash, &h.Jurisdiction, &h.TribeName, &h.Bio, &h.Location, &h.CreatedAt); err != nil {
 			return nil, err
 		}
 		agents, _ := q.ListAgentsByHuman(ctx, h.ID)

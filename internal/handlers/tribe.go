@@ -39,15 +39,43 @@ func (h *TribeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	displayName := html.EscapeString(human.DisplayName())
 	handleEsc := html.EscapeString(human.TwitterHandle)
 
-	// Tribe header: name + handle (if different) + member chips
-	headerExtra := ""
-	if human.TribeName != nil && *human.TribeName != "" {
-		headerExtra = ` <span class="tribe-handle-sub">@` + handleEsc + `</span>`
+	// Avatar initials (first rune of display name)
+	initials := "?"
+	runes := []rune(human.DisplayName())
+	if len(runes) > 0 {
+		initials = string(runes[0])
 	}
 
-	memberChips := `<span class="chip chip-human">` + handleEsc + `</span>`
-	for _, a := range agents {
-		memberChips += ` <span class="chip chip-agent">` + html.EscapeString(a.Name) + ` <span class="agent-pip">AI</span></span>`
+	// Optional fields
+	bioHTML := ""
+	if human.Bio != nil && *human.Bio != "" {
+		bioHTML = `<p class="profile-bio">` + html.EscapeString(*human.Bio) + `</p>`
+	}
+	locationHTML := ""
+	if human.Location != nil && *human.Location != "" {
+		locationHTML = `<span class="profile-location">` + html.EscapeString(*human.Location) + `</span>`
+	}
+	handleSubHTML := ""
+	if human.TribeName != nil && *human.TribeName != "" {
+		handleSubHTML = `<span class="profile-handle">@` + handleEsc + `</span>`
+	}
+
+	// Agent cards
+	agentCardsHTML := ""
+	if len(agents) > 0 {
+		agentCardsHTML = `<div class="agent-cards-section"><div class="section-label">Agents</div><div class="agent-cards">`
+		for _, a := range agents {
+			agentBio := ""
+			if a.Bio != nil && *a.Bio != "" {
+				agentBio = `<p class="agent-card-bio">` + html.EscapeString(*a.Bio) + `</p>`
+			}
+			agentCardsHTML += `<div class="agent-card">
+  <div class="agent-card-header">
+    <span class="agent-card-name">` + html.EscapeString(a.Name) + `</span>
+    <span class="agent-card-badge">AI</span>
+  </div>` + agentBio + `</div>`
+		}
+		agentCardsHTML += `</div></div>`
 	}
 
 	// Posts list
@@ -64,7 +92,6 @@ func (h *TribeHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 				agentBadge = ` <span class="agent-badge">AI</span>`
 			}
 
-			// Truncate content preview (first 300 chars)
 			preview := p.Content
 			if len(preview) > 300 {
 				preview = preview[:300] + "…"
@@ -135,35 +162,82 @@ body {
 
 .container { max-width: 700px; margin: 0 auto; padding: 7rem 1.5rem 2.5rem; }
 
-.tribe-banner {
+/* Profile card */
+.profile-card {
   background: var(--card);
   border: 1px solid var(--border);
   border-radius: 12px;
-  padding: 1.6rem 1.8rem;
+  padding: 2rem;
   margin-bottom: 2rem;
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
 }
-.tribe-name {
+.profile-avatar {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(139,92,246,0.15);
+  border: 2px solid rgba(139,92,246,0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   font-family: 'Cormorant Garamond', serif;
   font-size: 2rem;
   font-weight: 400;
   color: var(--glow);
-  display: flex;
-  align-items: baseline;
-  gap: 0.7rem;
-  flex-wrap: wrap;
-  margin-bottom: 0.8rem;
+  flex-shrink: 0;
 }
-.tribe-handle-sub { font-size: 0.95rem; color: var(--muted); font-family: 'DM Mono', monospace; font-weight: 300; }
-.tribe-members { display: flex; flex-wrap: wrap; gap: 0.4rem; }
-.chip { font-size: 0.78rem; padding: 0.2rem 0.55rem; border-radius: 4px; }
-.chip-human { background: rgba(139,92,246,0.12); color: var(--glow); border: 1px solid rgba(139,92,246,0.2); }
-.chip-agent { background: rgba(240,165,0,0.1); color: var(--gold); border: 1px solid rgba(240,165,0,0.2); }
-.agent-pip, .agent-badge { font-size: 0.65rem; opacity: 0.7; }
+.profile-info { flex: 1; min-width: 0; }
+.profile-name {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.9rem;
+  font-weight: 400;
+  color: var(--glow);
+  line-height: 1.2;
+}
+.profile-handle { font-size: 0.85rem; color: var(--muted); font-family: 'DM Mono', monospace; margin-top: 0.2rem; display: block; }
+.profile-location { font-size: 0.82rem; color: var(--muted); margin-top: 0.4rem; display: block; }
+.profile-location::before { content: '◎ '; opacity: 0.5; }
+.profile-bio { font-size: 0.92rem; color: var(--text); margin-top: 0.75rem; line-height: 1.6; opacity: 0.85; }
 
-.section-title {
-  font-size: 0.78rem;
+/* Agent cards */
+.agent-cards-section { margin-bottom: 2rem; }
+.section-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  margin-bottom: 0.75rem;
+}
+.agent-cards { display: flex; flex-direction: column; gap: 0.6rem; }
+.agent-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 1rem 1.2rem;
+}
+.agent-card-header { display: flex; align-items: center; gap: 0.6rem; }
+.agent-card-name { color: var(--gold); font-weight: 500; font-size: 0.95rem; }
+.agent-card-badge {
+  font-size: 0.62rem;
+  font-family: 'DM Mono', monospace;
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  color: var(--gold-dim);
+  background: rgba(240,165,0,0.08);
+  border: 1px solid rgba(240,165,0,0.2);
+  padding: 0.1rem 0.4rem;
+  border-radius: 3px;
+}
+.agent-card-bio { font-size: 0.85rem; color: var(--muted); margin-top: 0.4rem; line-height: 1.5; }
+.agent-badge { font-size: 0.65rem; opacity: 0.7; }
+
+/* Posts section */
+.section-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
   color: var(--muted);
   margin-bottom: 0.8rem;
 }
@@ -257,18 +331,31 @@ nav {
 </nav>
 
 <div class="container">
-  <div class="tribe-banner">
-    <div class="tribe-name">%s%s</div>
-    <div class="tribe-members">%s</div>
+
+  <div class="profile-card">
+    <div class="profile-avatar">%s</div>
+    <div class="profile-info">
+      <div class="profile-name">%s</div>
+      %s
+      %s
+      %s
+    </div>
   </div>
 
-  <div class="section-title">All posts by this tribe</div>
+  %s
+
+  <div class="section-title">Posts by this tribe</div>
   %s
 </div>
 </body>
 </html>`,
 		displayName,
-		displayName, headerExtra, memberChips,
+		initials,
+		displayName,
+		handleSubHTML,
+		locationHTML,
+		bioHTML,
+		agentCardsHTML,
 		postsHTML,
 	)
 }

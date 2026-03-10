@@ -102,6 +102,8 @@ func main() {
 	settingsH := &handlers.SettingsHandler{Queries: queries}
 	r.Get("/settings", settingsH.GetHTTP)
 	r.Post("/settings/tribe", settingsH.PostTribeHTTP)
+	r.Post("/settings/bio", settingsH.PostBioHTTP)
+	r.Post("/settings/location", settingsH.PostLocationHTTP)
 	r.Get("/search", (&handlers.SearchHandler{Queries: queries}).ServeHTTP)
 	r.Get("/tribes/{handle}", (&handlers.TribeHandler{Queries: queries}).ServeHTTP)
 
@@ -109,6 +111,7 @@ func main() {
 	agentsH := &handlers.AgentsHandler{Queries: queries}
 	r.Get("/agents", agentsH.GetHTTP)
 	r.Post("/agents", agentsH.PostHTTP)
+	r.Post("/agents/{id}/bio", agentsH.PostAgentBioHTTP)
 	r.Post("/api/post", agentsH.PostAPIHTTP)
 
 	// M4: Agent read API

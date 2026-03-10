@@ -4,6 +4,9 @@ CREATE TABLE humans (
   twitter_handle TEXT UNIQUE NOT NULL,
   password_hash TEXT NOT NULL,
   jurisdiction TEXT NOT NULL DEFAULT 'EU-EEA',
+  tribe_name TEXT,
+  bio TEXT,
+  location TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -26,6 +29,7 @@ CREATE TABLE agents (
   substrate TEXT NOT NULL,
   model TEXT,
   memory_mode TEXT,
+  bio TEXT,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   frozen_at TIMESTAMPTZ
 );

@@ -35,14 +35,27 @@ func (h *SettingsHandler) GetHTTP(w http.ResponseWriter, r *http.Request) {
 	if human.TribeName != nil {
 		currentTribeName = *human.TribeName
 	}
+	currentBio := ""
+	if human.Bio != nil {
+		currentBio = *human.Bio
+	}
+	currentLocation := ""
+	if human.Location != nil {
+		currentLocation = *human.Location
+	}
 
 	successMsg := ""
 	errorMsg := ""
-	if r.URL.Query().Get("saved") == "1" {
+	switch r.URL.Query().Get("saved") {
+	case "tribe":
 		successMsg = `<div class="success">Tribe name updated.</div>`
+	case "bio":
+		successMsg = `<div class="success">Bio updated.</div>`
+	case "location":
+		successMsg = `<div class="success">Location updated.</div>`
 	}
 	if r.URL.Query().Get("error") == "1" {
-		errorMsg = `<div class="error">Tribe name too long (max 60 chars).</div>`
+		errorMsg = `<div class="error">Value too long.</div>`
 	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
@@ -234,6 +247,40 @@ nav {
       <button type="submit" class="btn-save">Save</button>
     </form>
   </div>
+
+  <div class="settings-card">
+    <h2>Bio</h2>
+    <div class="field-hint" style="margin-bottom:1rem;">
+      A short introduction shown on your profile. Optional.
+    </div>
+    <form method="POST" action="/settings/bio">
+      <div class="field-group">
+        <label class="field-label" for="bio">Bio</label>
+        <textarea id="bio" name="bio" rows="3" maxlength="300"
+                  placeholder="A few words about you…"
+                  style="width:100%%;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Outfit',sans-serif;font-size:0.95rem;padding:0.65rem 0.9rem;outline:none;resize:vertical;transition:border-color 0.2s;">%s</textarea>
+        <div class="field-hint" style="margin-top:0.3rem;">Max 300 characters.</div>
+      </div>
+      <button type="submit" class="btn-save">Save</button>
+    </form>
+  </div>
+
+  <div class="settings-card">
+    <h2>Location</h2>
+    <div class="field-hint" style="margin-bottom:1rem;">
+      City, country, or wherever you call home. Optional.
+    </div>
+    <form method="POST" action="/settings/location">
+      <div class="field-group">
+        <label class="field-label" for="location">Location</label>
+        <input type="text" id="location" name="location"
+               value="%s"
+               placeholder="e.g. Berlin, EU"
+               maxlength="80">
+      </div>
+      <button type="submit" class="btn-save">Save</button>
+    </form>
+  </div>
 </div>
 </body>
 </html>`,
@@ -242,6 +289,8 @@ nav {
 		html.EscapeString(human.TwitterHandle),
 		html.EscapeString(currentTribeName),
 		html.EscapeString(human.TwitterHandle),
+		html.EscapeString(currentBio),
+		html.EscapeString(currentLocation),
 	)
 }
 
@@ -268,5 +317,57 @@ func (h *SettingsHandler) PostTribeHTTP(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	http.Redirect(w, r, "/settings?saved=1", http.StatusSeeOther)
+	http.Redirect(w, r, "/settings?saved=tribe", http.StatusSeeOther)
+}
+
+func (h *SettingsHandler) PostBioHTTP(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("sb_session")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	session, err := h.Queries.GetSession(r.Context(), cookie.Value)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	bio := strings.TrimSpace(r.FormValue("bio"))
+	if len(bio) > 300 {
+		http.Redirect(w, r, "/settings?error=1", http.StatusSeeOther)
+		return
+	}
+
+	if err := h.Queries.UpdateHumanBio(r.Context(), session.HumanID, bio); err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/settings?saved=bio", http.StatusSeeOther)
+}
+
+func (h *SettingsHandler) PostLocationHTTP(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("sb_session")
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+	session, err := h.Queries.GetSession(r.Context(), cookie.Value)
+	if err != nil {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		return
+	}
+
+	location := strings.TrimSpace(r.FormValue("location"))
+	if len(location) > 80 {
+		http.Redirect(w, r, "/settings?error=1", http.StatusSeeOther)
+		return
+	}
+
+	if err := h.Queries.UpdateHumanLocation(r.Context(), session.HumanID, location); err != nil {
+		http.Error(w, "Database error", http.StatusInternalServerError)
+		return
+	}
+
+	http.Redirect(w, r, "/settings?saved=location", http.StatusSeeOther)
 }

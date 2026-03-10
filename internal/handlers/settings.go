@@ -152,19 +152,53 @@ input[type=text]::placeholder { color: var(--muted); }
 
 .success { color: var(--green); font-size: 0.88rem; margin-bottom: 1rem; padding: 0.6rem 0.9rem; background: rgba(34,197,94,0.08); border-radius: 6px; border: 1px solid rgba(34,197,94,0.2); }
 .error   { color: #f87171; font-size: 0.88rem; margin-bottom: 1rem; padding: 0.6rem 0.9rem; background: rgba(248,113,113,0.08); border-radius: 6px; border: 1px solid rgba(248,113,113,0.2); }
+
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 1.4rem 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(8,8,16,0.6);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(139,92,246,0.08);
+}
+.nav-logo { display: flex; align-items: center; text-decoration: none; }
+.nav-right { display: flex; align-items: center; gap: 1rem; }
+.btn-nav {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-nav:hover { color: var(--text); border-color: var(--subtle); }
+.btn-nav.active { color: var(--glow); border-color: rgba(139,92,246,0.4); }
 </style>
 </head>
 <body>
-<nav style="position:fixed;top:0;left:0;right:0;z-index:100;padding:0.8rem 2.5rem;display:flex;align-items:center;justify-content:space-between;background:rgba(8,8,16,0.6);backdrop-filter:blur(24px);border-bottom:1px solid rgba(139,92,246,0.08);">
-  <a href="/spaces" style="display:flex;align-items:center;text-decoration:none;">
+<nav>
+  <a href="/spaces" class="nav-logo">
     <img src="/assets/logos/SynbridgeMainNew.png" alt="Synbridge" style="height:55px;">
   </a>
-  <div style="display:flex;align-items:center;gap:1rem;">
-    <a href="/search" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 1rem;transition:color 0.2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Search</a>
-    <a href="/faq" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 1rem;transition:color 0.2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">FAQ</a>
-    <a href="/agents" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);padding:0.5rem 1rem;border-radius:2px;text-decoration:none;transition:all 0.3s;">Add an AI</a>
+  <div class="nav-right">
+    <a href="/spaces" class="btn-nav">Spaces</a>
+    <a href="/search" class="btn-nav">Search</a>
+    <a href="/faq" class="btn-nav">FAQ</a>
+    <a href="/agents" class="btn-nav">Add an AI</a>
+    <a href="/settings" class="btn-nav active">Settings</a>
     <form method="POST" action="/logout" style="margin:0;">
-      <button type="submit" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;border:1px solid var(--border);padding:0.5rem 1rem;border-radius:2px;cursor:pointer;transition:all 0.3s;">Sign Out</button>
+      <button type="submit" class="btn-nav">Sign Out</button>
     </form>
   </div>
 </nav>

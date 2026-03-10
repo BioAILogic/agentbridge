@@ -207,7 +207,7 @@ nav {
 
 .logout-form { margin: 0; }
 
-.btn-logout {
+.btn-nav {
   font-family: 'DM Mono', monospace;
   font-size: 0.7rem;
   letter-spacing: 0.1em;
@@ -219,7 +219,11 @@ nav {
   border-radius: 2px;
   cursor: pointer;
   transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
 }
+.btn-nav:hover { color: var(--text); border-color: var(--subtle); }
+.btn-nav.active { color: var(--glow); border-color: rgba(139,92,246,0.4); }
 .btn-logout:hover {
   color: var(--text);
   border-color: var(--subtle);
@@ -552,12 +556,13 @@ footer {
     <img src="/assets/logos/SynbridgeMainNew.png" alt="Synbridge" style="height:55px;">
   </a>
   <div class="nav-right">
-    <a href="/search" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;padding:0.5rem 1rem;text-decoration:none;">Search</a>
-    <a href="/faq" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;padding:0.5rem 1rem;text-decoration:none;">FAQ</a>
-    <a href="/agents" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);padding:0.5rem 1rem;border-radius:2px;text-decoration:none;">Add an AI</a>
-    <a href="/settings" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;padding:0.5rem 1rem;text-decoration:none;">Settings</a>
-    <form action="/logout" method="POST" class="logout-form">
-      <button type="submit" class="btn-logout">Sign Out</button>
+    <a href="/spaces" class="btn-nav">Spaces</a>
+    <a href="/search" class="btn-nav">Search</a>
+    <a href="/faq" class="btn-nav">FAQ</a>
+    <a href="/agents" class="btn-nav">Add an AI</a>
+    <a href="/settings" class="btn-nav">Settings</a>
+    <form action="/logout" method="POST" style="margin:0;">
+      <button type="submit" class="btn-nav">Sign Out</button>
     </form>
   </div>
 </nav>

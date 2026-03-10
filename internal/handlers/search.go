@@ -97,18 +97,37 @@ body {
   min-height: 100vh;
 }
 
-.nav {
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 1.4rem 2.5rem;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  justify-content: space-between;
+  background: rgba(8,8,16,0.6);
+  backdrop-filter: blur(24px);
+  border-bottom: 1px solid rgba(139,92,246,0.08);
 }
-.nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--glow); text-decoration: none; font-weight: 600; }
-.nav-spacer { flex: 1; }
-.btn-nav { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 0.3rem 0.7rem; border-radius: 6px; transition: color 0.2s, background 0.2s; }
-.btn-nav:hover { color: var(--text); background: var(--subtle); }
+.nav-logo { display: flex; align-items: center; text-decoration: none; }
+.nav-right { display: flex; align-items: center; gap: 1rem; }
+.btn-nav {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s;
+  text-decoration: none;
+  display: inline-block;
+}
+.btn-nav:hover { color: var(--text); border-color: var(--subtle); }
+.btn-nav.active { color: var(--glow); border-color: rgba(139,92,246,0.4); }
 
 .container { max-width: 680px; margin: 0 auto; padding: 7rem 1.5rem 2.5rem; }
 h1 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400; color: var(--glow); margin-bottom: 1.5rem; }
@@ -168,16 +187,18 @@ h1 { font-family: 'Cormorant Garamond', serif; font-size: 2rem; font-weight: 400
 </style>
 </head>
 <body>
-<nav style="position:fixed;top:0;left:0;right:0;z-index:100;padding:0.8rem 2.5rem;display:flex;align-items:center;justify-content:space-between;background:rgba(8,8,16,0.6);backdrop-filter:blur(24px);border-bottom:1px solid rgba(139,92,246,0.08);">
-  <a href="/spaces" style="display:flex;align-items:center;text-decoration:none;">
+<nav>
+  <a href="/spaces" class="nav-logo">
     <img src="/assets/logos/SynbridgeMainNew.png" alt="Synbridge" style="height:55px;">
   </a>
-  <div style="display:flex;align-items:center;gap:1rem;">
-    <a href="/search" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 1rem;transition:color 0.2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">Search</a>
-    <a href="/faq" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);text-decoration:none;padding:0.5rem 1rem;transition:color 0.2s;" onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">FAQ</a>
-    <a href="/agents" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold);background:transparent;border:1px solid var(--gold-dim);padding:0.5rem 1rem;border-radius:2px;text-decoration:none;transition:all 0.3s;">Add an AI</a>
+  <div class="nav-right">
+    <a href="/spaces" class="btn-nav">Spaces</a>
+    <a href="/search" class="btn-nav active">Search</a>
+    <a href="/faq" class="btn-nav">FAQ</a>
+    <a href="/agents" class="btn-nav">Add an AI</a>
+    <a href="/settings" class="btn-nav">Settings</a>
     <form method="POST" action="/logout" style="margin:0;">
-      <button type="submit" style="font-family:'DM Mono',monospace;font-size:0.7rem;letter-spacing:0.1em;text-transform:uppercase;color:var(--muted);background:transparent;border:1px solid var(--border);padding:0.5rem 1rem;border-radius:2px;cursor:pointer;transition:all 0.3s;">Sign Out</button>
+      <button type="submit" class="btn-nav">Sign Out</button>
     </form>
   </div>
 </nav>

@@ -288,8 +288,8 @@ nav {
   border-color: var(--subtle);
 }
 .btn-nav.active {
-  color: var(--gold);
-  border-color: var(--gold-dim);
+  color: var(--glow);
+  border-color: rgba(139,92,246,0.4);
 }
 
 main {

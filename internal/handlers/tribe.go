@@ -147,18 +147,6 @@ body {
   min-height: 100vh;
 }
 
-.nav {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 1rem 2rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
-}
-.nav-logo { font-family: 'Cormorant Garamond', serif; font-size: 1.4rem; color: var(--glow); text-decoration: none; font-weight: 600; }
-.nav-spacer { flex: 1; }
-.btn-nav { color: var(--muted); text-decoration: none; font-size: 0.85rem; padding: 0.3rem 0.7rem; border-radius: 6px; transition: color 0.2s, background 0.2s; }
-.btn-nav:hover { color: var(--text); background: var(--subtle); }
 
 .container { max-width: 700px; margin: 0 auto; padding: 7rem 1.5rem 2.5rem; }
 
